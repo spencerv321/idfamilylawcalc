@@ -15,6 +15,7 @@ test('primary example: Rule 120 numbers, worksheet and step-down', async ({ page
   await expect(results.locator('.big')).toContainText('$560');
   await expect(results.getByText('$709', { exact: true })).toBeVisible();
   await expect(results.getByText('Step-down schedule')).toBeVisible();
+  await expect(page.getByRole('note')).toContainText('Verify before filing');
   await page.screenshot({ path: shot('calculator-primary'), fullPage: true });
 });
 

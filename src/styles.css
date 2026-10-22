@@ -130,6 +130,8 @@ h1, h2, h3 { margin: 0; }
 .case-list li:hover { background: var(--surface-2); }
 
 .banner { padding: 8px 24px; font-size: 13px; }
+.banner.beta { background: var(--info-bg); color: var(--ink-2); border-bottom: 1px solid var(--info-line); text-align: center; }
+.banner.beta strong { display: inline-block; margin-right: 8px; padding: 0 7px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; }
 .banner.warn { background: var(--warn-bg); color: var(--warn); border-bottom: 1px solid var(--warn-line); }
 
 /* ---------- buttons & inputs ---------- */

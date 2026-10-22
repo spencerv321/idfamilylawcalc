@@ -11,6 +11,9 @@ import { useCases } from './model/useCases';
 
 type View = 'calculator' | 'mediation';
 
+/** Set to false once results have been checked against ICSP (see DECISIONS.md). */
+const BETA = true;
+
 export function App() {
   const { cases, current, loaded, storageError, update, open, remove } = useCases();
   const [view, setView] = useState<View>(() => (sessionGet('view') === 'mediation' ? 'mediation' : 'calculator'));
@@ -60,6 +63,11 @@ export function App() {
         />
       </header>
 
+      {BETA && (
+        <div className="banner beta" role="note">
+          <strong>Beta</strong> Results haven’t yet been checked against ICSP. Verify before filing.
+        </div>
+      )}
       {storageError && <div className="banner warn">{storageError}</div>}
 
       <main className={view}>
