@@ -8,7 +8,7 @@ async function loadExample(page: import('@playwright/test').Page, label: string)
 }
 
 test('primary example: Rule 120 numbers, worksheet and step-down', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app/');
   await loadExample(page, 'Primary custody');
   const results = page.getByRole('complementary', { name: 'Results' });
   // Rule 120(i)(3): $709 basic, $506 base. Plus -$51 insurance credit and +$105 tax share = $560.
@@ -20,7 +20,7 @@ test('primary example: Rule 120 numbers, worksheet and step-down', async ({ page
 });
 
 test('typing updates the result live and invalid money is flagged', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app/');
   await page.getByLabel('Parent A name').fill('Pat');
   await page.getByLabel('Pat: wages').fill('60,000');
   await page.getByLabel('Parent B: wages').fill('40000');
@@ -32,7 +32,7 @@ test('typing updates the result live and invalid money is flagged', async ({ pag
 });
 
 test('shared example: Form 7 worksheet and PDF download', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app/');
   await loadExample(page, 'Shared custody');
   await expect(page.getByText('Shared custody · Form 7')).toBeVisible();
   const download = page.waitForEvent('download');
@@ -44,14 +44,14 @@ test('shared example: Form 7 worksheet and PDF download', async ({ page }) => {
 });
 
 test('cases persist across reloads', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app/');
   await loadExample(page, 'Split custody');
   await page.reload();
   await expect(page.locator('.case-title')).toHaveText('Example: split custody (2 + 1)');
 });
 
 test('mediation: two scenarios, sliders and delta', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app/');
   await loadExample(page, 'Shared custody');
   await page.getByRole('button', { name: 'Mediation' }).click();
   await page.getByRole('button', { name: 'Start from this case' }).click();
@@ -65,7 +65,7 @@ test('mediation: two scenarios, sliders and delta', async ({ page }) => {
 
 test('narrow screen layout', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  await page.goto('/app/');
   await loadExample(page, 'Primary custody');
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
@@ -81,7 +81,7 @@ test('works under the production Content-Security-Policy (public/_headers)', asy
     const res = await route.fetch();
     await route.fulfill({ response: res, headers: { ...res.headers(), 'content-security-policy': csp } });
   });
-  await page.goto('/');
+  await page.goto('/app/');
   await loadExample(page, 'Shared custody');
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Both as one PDF' }).click();
@@ -99,7 +99,7 @@ test('works under the production Content-Security-Policy (public/_headers)', asy
 
 test('light by default; theme toggle switches and persists', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
-  await page.goto('/');
+  await page.goto('/app/');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await page.getByRole('button', { name: 'Switch to dark mode' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
@@ -111,7 +111,7 @@ test('light by default; theme toggle switches and persists', async ({ page }) =>
 });
 
 test('schedule preset fills overnights; monthly entry stores annual', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app/');
   await loadExample(page, 'Primary custody');
   await page.getByLabel('Schedule describes time with').getByRole('radio', { name: 'Alex Rivera' }).click();
   await page.getByLabel('Common schedule').first().selectOption('eow-midweek');
@@ -129,7 +129,7 @@ test('schedule preset fills overnights; monthly entry stores annual', async ({ p
 
 test('order language: drafted, editable start date, copyable', async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-  await page.goto('/');
+  await page.goto('/app/');
   await loadExample(page, 'Primary custody');
   await page.getByRole('button', { name: 'Order language' }).click();
   const text = page.getByLabel('Draft order language');
@@ -144,7 +144,7 @@ test('order language: drafted, editable start date, copyable', async ({ page, co
 });
 
 test('print layouts: client summary and mediation comparison', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app/');
   await loadExample(page, 'Shared custody');
   await page.evaluate(() => (document.body.dataset.print = 'summary'));
   await page.pdf({ path: 'test-results/screens/print-summary.pdf', format: 'Letter' });
@@ -156,7 +156,7 @@ test('print layouts: client summary and mediation comparison', async ({ page }) 
 });
 
 test('backup reminder, back up all, and restore', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app/');
   await loadExample(page, 'Split custody');
   const reminder = page.getByRole('region', { name: 'Backup reminder' });
   await expect(reminder).toContainText('not backed up');

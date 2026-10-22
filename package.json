@@ -6,7 +6,7 @@
   "description": "Idaho child support calculator (I.R.F.L.P. Rule 120)",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && tsx scripts/prerender.tsx",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

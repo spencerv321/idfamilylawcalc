@@ -8,7 +8,11 @@ import { deleteCase, listCases, saveCase } from './storage';
  * blank case isn't saved until it is first edited, so opening the app doesn't
  * litter the list with "Untitled case".
  */
-export function useCases() {
+/**
+ * @param initial A case to open instead of the most recent saved one (e.g. a
+ * handoff from the quick estimator). It isn't saved until edited.
+ */
+export function useCases(initial?: () => CaseFile | null) {
   const [cases, setCases] = useState<CaseFile[]>([]);
   const [current, setCurrent] = useState<CaseFile>(() => newCase());
   const [loaded, setLoaded] = useState(false);
@@ -29,7 +33,9 @@ export function useCases() {
       try {
         const all = await listCases();
         setCases(all);
-        if (all[0]) setCurrent(all[0]);
+        const handoff = initial?.();
+        if (handoff) setCurrent(handoff);
+        else if (all[0]) setCurrent(all[0]);
       } catch (e) {
         setStorageError(`Saved cases are unavailable in this browser (${(e as Error).message}). Use Export to keep your work.`);
       }

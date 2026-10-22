@@ -10,7 +10,20 @@ line, mediation mode, step-down schedule, draft order language, printable
 client summary and proposal comparison, filled Forms 5/6/7, and local-first
 saving with backup/restore.
 
-Live: https://idaho-child-support-calc.pages.dev (deploys from `main`).
+Live: https://idaho-child-support-calc.pages.dev (deploys from `main`). The
+calculator is at `/app/`; the root and `/idaho/...` are prerendered content
+pages for search.
+
+### Domain and site name
+
+Content pages, canonical links, the sitemap and social previews take their
+domain from build-time environment variables. Set them in Cloudflare Pages
+(Settings → Variables and Secrets) and redeploy:
+
+| Variable | Default |
+| --- | --- |
+| `SITE_URL` | `https://idaho-child-support-calc.pages.dev` |
+| `SITE_NAME` | `Idaho Child Support Calculator` |
 
 ```sh
 pnpm install
@@ -40,6 +53,8 @@ src/
   model/                     case file shape, engine adapter, IndexedDB storage, examples
   components/                input ledger, results/worksheet, mediation, overnights chart
   pdf/forms.ts               fills the official forms at measured positions
+  site/                      content pages (pages.tsx), layout, quick estimator island
+scripts/prerender.tsx        renders the content pages, sitemap, robots.txt, 404
 public/forms/                unmodified ISC Forms 5, 6, 7 (hashes in SOURCES.md)
 e2e/                         Playwright smoke tests
 scripts/extract-tax-tables.ts

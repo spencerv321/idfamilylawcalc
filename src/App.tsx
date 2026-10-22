@@ -3,7 +3,7 @@ import { calculate } from '../engine';
 import { InputPanel } from './components/InputPanel';
 import { MediationView } from './components/MediationView';
 import { ResultsPanel } from './components/ResultsPanel';
-import { InputError, newCase, newId, toEngineInput, type CaseFile } from './model/case';
+import { caseFromPrefill, InputError, newCase, newId, toEngineInput, type CaseFile } from './model/case';
 import { formatDate, usd } from './model/format';
 import { EXAMPLES } from './model/samples';
 import {
@@ -27,7 +27,13 @@ type View = 'calculator' | 'mediation';
 const BETA = true;
 
 export function App() {
-  const { cases, current, loaded, storageError, update, open, remove, refresh } = useCases();
+  // Read the estimator handoff once, then drop it from the address bar.
+  const [handoff] = useState(() => {
+    const c = caseFromPrefill(window.location.hash);
+    if (c) history.replaceState(null, '', window.location.pathname);
+    return c;
+  });
+  const { cases, current, loaded, storageError, update, open, remove, refresh } = useCases(() => handoff);
   const [backupTick, setBackupTick] = useState(0);
   const needBackup = useMemo(() => casesNeedingBackup(cases), [cases, backupTick]);
   const hasCases = cases.length > 0;

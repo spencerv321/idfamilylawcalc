@@ -280,3 +280,28 @@ export function normalizeCase(raw: unknown): CaseFile {
     jurisdiction: c.jurisdiction ?? 'ID',
   } as CaseFile;
 }
+
+/**
+ * A new case from the quick estimator's handoff (`#prefill=` in the URL
+ * fragment, which browsers never send to the server). Returns null when absent
+ * or malformed.
+ */
+export function caseFromPrefill(hash: string): CaseFile | null {
+  if (!hash.startsWith('#prefill=')) return null;
+  try {
+    const p = JSON.parse(decodeURIComponent(hash.slice('#prefill='.length))) as Record<string, unknown>;
+    const a = parseMoney(String(p.a ?? ''));
+    const b = parseMoney(String(p.b ?? ''));
+    const n = Math.max(1, Math.min(5, Math.trunc(Number(p.children)) || 1));
+    const nights = Math.max(0, Math.min(365, Math.round(Number(p.nightsWithA)) || 0));
+    if (a === null || b === null) return null;
+    const c = newCase();
+    c.title = 'New case from estimate';
+    c.parents.A.income.wages = new Decimal(a).times(12).toString();
+    c.parents.B.income.wages = new Decimal(b).times(12).toString();
+    c.children = Array.from({ length: n }, (_, i) => ({ ...emptyChild(i), overnightsWithA: nights }));
+    return c;
+  } catch {
+    return null;
+  }
+}
