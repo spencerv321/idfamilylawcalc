@@ -73,6 +73,12 @@ describe('import', () => {
     expect(await importJson(file(backup))).toHaveLength(2);
   });
 
+  it('older case files without a jurisdiction load as Idaho', async () => {
+    const { jurisdiction: _, ...old } = primaryExample();
+    const [c] = await importJson(file(old));
+    expect(c!.jurisdiction).toBe('ID');
+  });
+
   it('rejects other JSON', async () => {
     await expect(importJson(file({ hello: 1 }))).rejects.toThrow();
   });

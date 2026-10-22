@@ -75,9 +75,14 @@ export interface Scenario {
   facts: CaseFacts;
 }
 
+/** States the app supports, by USPS code. Each maps to an engine guidelines file. */
+export type Jurisdiction = 'ID';
+
 export interface CaseFile extends CaseFacts {
   schema: 'idaho-child-support-case';
   version: 1;
+  /** Whose child support rules this case uses. Cases saved before this field existed are Idaho. */
+  jurisdiction: Jurisdiction;
   id: string;
   title: string;
   createdAt: string;
@@ -130,6 +135,7 @@ export function newCase(): CaseFile {
     schema: 'idaho-child-support-case',
     version: 1,
     id: newId(),
+    jurisdiction: 'ID',
     title: 'Untitled case',
     createdAt: now,
     updatedAt: now,
@@ -271,5 +277,6 @@ export function normalizeCase(raw: unknown): CaseFile {
     children: c.children ?? base.children,
     mediation: c.mediation ?? null,
     order: { ...base.order, ...c.order },
+    jurisdiction: c.jurisdiction ?? 'ID',
   } as CaseFile;
 }
