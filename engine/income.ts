@@ -154,7 +154,13 @@ export function incomeShares(
     const half = new Decimal('0.5');
     return { combinedAnnual, A: half, B: half, zeroCombined: true };
   }
-  let A = a.div(combinedAnnual);
-  if (opts.sharePrecision === 'percent-2dp') A = A.toDecimalPlaces(4);
-  return { combinedAnnual, A, B: new Decimal(1).minus(A), zeroCombined: false };
+  if (opts.sharePrecision === 'percent-2dp') {
+    // Form 6 prints shares to 0.01% summing to 100.00%.
+    const A = a.div(combinedAnnual).toDecimalPlaces(4);
+    return { combinedAnnual, A, B: new Decimal(1).minus(A), zeroCombined: false };
+  }
+  // Each share from its own division (not 1 - A), so swapping the parents
+  // gives bit-identical intermediates and a result that never depends on
+  // which parent is labelled A.
+  return { combinedAnnual, A: a.div(combinedAnnual), B: b.div(combinedAnnual), zeroCombined: false };
 }

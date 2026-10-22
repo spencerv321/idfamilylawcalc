@@ -202,3 +202,28 @@ obligation is $0.
   percentages the engine reports. There are no amounts to compute in advance.
 - The 120(g)(1) federal child care tax credit is not modeled (the tax tables
   exclude it too, per endnote 4).
+
+---
+
+## D-018 Filling Forms 5, 6 and 7 · Choice
+
+The court's PDFs have no fillable fields, so values are drawn at measured
+positions on the unmodified forms (`public/forms/`, hashes in `SOURCES.md`).
+`src/pdf/forms.test.ts` fills each form and reads the text back out to check
+placement.
+
+- **Form 5** shows annual figures for both parents. A2 is receipts minus
+  expenses; depreciation and half of the self-employment tax go on B1–B2.
+  B3 combines other orders, spousal maintenance in this case, and unordered
+  support, because the form has no separate lines for 120(f)(2)–(3) (see D-007).
+  Blank lines stay blank. Signature and date are left for the affiant.
+- **Form 6**: line 5 and the line 6 "+/−" adjustments go in the paying
+  parent's column, signed relative to that parent. Directly paid child care
+  or insurance shows each parent's share, marked "paid direct", and is not
+  added to line 7.
+- **Form 7**: the per-child grid holds five children; a sixth is included in
+  lines 9–10 and noted in the comments. The "other costs" lines are signed
+  relative to the paying parent. The comments block states who pays whom and
+  which "Parent" column is which.
+- Amounts follow the rounding convention (D-001): whole dollars under
+  `'rule-example'`, cents under `'exact'`.
