@@ -70,3 +70,28 @@ test('narrow screen layout', async ({ page }) => {
   expect(overflow).toBeLessThanOrEqual(0);
   await page.screenshot({ path: shot('mobile'), fullPage: true });
 });
+
+test('works under the production Content-Security-Policy (public/_headers)', async ({ page }) => {
+  const { readFileSync } = await import('node:fs');
+  const csp = readFileSync('public/_headers', 'utf8').match(/Content-Security-Policy: (.*)/)![1]!;
+  const violations: string[] = [];
+  page.on('console', (m) => m.text().includes('Content Security Policy') && violations.push(m.text()));
+  await page.route('**/*', async (route) => {
+    const res = await route.fetch();
+    await route.fulfill({ response: res, headers: { ...res.headers(), 'content-security-policy': csp } });
+  });
+  await page.goto('/');
+  await loadExample(page, 'Shared custody');
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Both as one PDF' }).click();
+  await download;
+  await page.getByRole('button', { name: 'Mediation' }).click();
+  await page.getByRole('button', { name: 'Start from this case' }).click();
+  await expect(page.locator('.ov-chart svg').first()).toBeVisible();
+  // A request to another origin must be blocked.
+  const blocked = await page.evaluate(() => fetch('https://example.com').then(() => false, () => true));
+  expect(blocked).toBe(true);
+  // Blocked by the policy itself, not just by a missing network.
+  expect(violations.some((v) => v.includes('example.com'))).toBe(true);
+  expect(violations.filter((v) => !v.includes('example.com'))).toEqual([]);
+});
