@@ -96,3 +96,16 @@ test('works under the production Content-Security-Policy (public/_headers)', asy
   expect(violations.some((v) => v.includes('example.com'))).toBe(true);
   expect(violations.filter((v) => !v.includes('example.com'))).toEqual([]);
 });
+
+test('light by default; theme toggle switches and persists', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await page.getByRole('button', { name: 'Switch to dark mode' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.screenshot({ path: shot('dark') });
+  await page.getByRole('button', { name: 'Switch to light mode' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+});

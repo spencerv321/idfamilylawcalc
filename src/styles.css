@@ -34,37 +34,35 @@
   color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #101318;
-    --surface: #171b22;
-    --surface-2: #1c2129;
-    --ink: #eceae4;
-    --ink-2: #c3c1b8;
-    --muted: #8f939c;
-    --line: #2a3039;
-    --line-strong: #3a414c;
-    --accent: #8db3e8;
-    --accent-ink: #0f1520;
-    --accent-soft: #1e2a3b;
-    --parent-a: #7fa9e3;
-    --parent-a-soft: #1d2a3c;
-    --parent-b: #e09a78;
-    --parent-b-soft: #3a261d;
-    --shared: #b8bcc6;
-    --shared-soft: #262b33;
-    --warn: #f0c46a;
-    --warn-bg: #2c2414;
-    --warn-line: #6b5420;
-    --info-bg: #1a2230;
-    --info-line: #34445c;
-    --error: #ff8f8f;
-    --series: #4f8ad6;
-    --zone: #1d222b;
-    --focus: #8db3e8;
-    --shadow: none;
-    color-scheme: dark;
-  }
+:root[data-theme='dark'] {
+  --bg: #101318;
+  --surface: #171b22;
+  --surface-2: #1c2129;
+  --ink: #eceae4;
+  --ink-2: #c3c1b8;
+  --muted: #8f939c;
+  --line: #2a3039;
+  --line-strong: #3a414c;
+  --accent: #8db3e8;
+  --accent-ink: #0f1520;
+  --accent-soft: #1e2a3b;
+  --parent-a: #7fa9e3;
+  --parent-a-soft: #1d2a3c;
+  --parent-b: #e09a78;
+  --parent-b-soft: #3a261d;
+  --shared: #b8bcc6;
+  --shared-soft: #262b33;
+  --warn: #f0c46a;
+  --warn-bg: #2c2414;
+  --warn-line: #6b5420;
+  --info-bg: #1a2230;
+  --info-line: #34445c;
+  --error: #ff8f8f;
+  --series: #4f8ad6;
+  --zone: #1d222b;
+  --focus: #8db3e8;
+  --shadow: none;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -105,7 +103,14 @@ h1, h2, h3 { margin: 0; }
 }
 .tabs button.on { background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--line), var(--shadow); }
 
-.case-menu { position: relative; justify-self: end; }
+.topbar-right { justify-self: end; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.theme-toggle {
+  display: grid; place-items: center; width: 36px; height: 36px; flex: none;
+  border: 1px solid var(--line); border-radius: 8px; background: var(--surface); cursor: pointer; color: var(--ink-2);
+}
+.theme-toggle:hover { border-color: var(--line-strong); color: var(--ink); }
+.theme-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.case-menu { position: relative; min-width: 0; }
 .case-button {
   display: grid; grid-template-columns: auto auto; column-gap: 8px; text-align: left;
   border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 5px 10px; cursor: pointer; max-width: 340px;
