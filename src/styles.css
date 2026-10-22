@@ -402,3 +402,68 @@ table.sheet { width: 100%; border-collapse: collapse; font-variant-numeric: tabu
   .section-body { padding: 10px 12px 14px; }
   .sheet td, .sheet th { padding: 5px 5px; }
 }
+
+/* ---------- schedule presets ---------- */
+.schedule-picker { border: 1px dashed var(--line-strong); border-radius: 8px; padding: 10px 12px; }
+.schedule-picker.compact { border: 0; padding: 8px 0 0; }
+.schedule-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.schedule-row .grow { flex: 1 1 240px; }
+.schedule-row .summer input { width: 72px; }
+.field select {
+  height: 34px; padding: 0 30px 0 10px; border: 1px solid var(--line-strong); border-radius: 7px; background: var(--surface); min-width: 0; width: 100%;
+  appearance: none; cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 15px) 15px, calc(100% - 10px) 15px; background-size: 5px 5px; background-repeat: no-repeat;
+}
+.field select:focus { border-color: var(--focus); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 18%, transparent); }
+
+/* ---------- backup reminder ---------- */
+.banner.backup {
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 16px;
+  background: var(--warn-bg); color: var(--ink); border-bottom: 1px solid var(--warn-line);
+}
+
+/* ---------- order language ---------- */
+.order-opts { margin-bottom: 10px; }
+.order-text {
+  width: 100%; resize: vertical; padding: 12px 14px; border: 1px solid var(--line-strong); border-radius: 8px;
+  background: var(--surface-2); color: var(--ink); font: 13.5px/1.55 var(--serif); white-space: pre-wrap;
+}
+
+/* ---------- print ---------- */
+.print-area { display: none; }
+
+@media print {
+  @page { size: letter; margin: 0.5in 0.6in; }
+  body { background: #fff !important; color: #111 !important; }
+  .app > *:not(.print-area) { display: none !important; }
+  .print-area { display: block; }
+  .print-page { display: none; font: 10.5pt/1.4 var(--sans); color: #111; }
+  body[data-print='summary'] .print-page[data-kind='summary'],
+  body[data-print='comparison'] .print-page[data-kind='comparison'] { display: block; }
+  /* Printing with Cmd+P (no layout chosen) prints the summary. */
+  body:not([data-print]) .print-page[data-kind='summary'] { display: block; }
+
+  .ps-head { display: flex; justify-content: space-between; gap: 24px; border-bottom: 2px solid #1f3a5f; padding-bottom: 8px; margin-bottom: 12px; }
+  .ps-head h1 { font: 600 20pt/1.2 var(--serif); color: #1f3a5f; margin: 0 0 4px; }
+  .ps-head p { margin: 0; color: #333; }
+  .ps-meta { text-align: right; font-size: 9pt; color: #555 !important; }
+  .print-page h2 { font: 600 12pt/1.3 var(--serif); margin: 13px 0 4px; color: #1f3a5f; }
+  .ps-hero { margin: 4px 0 12px; }
+  .ps-who { margin: 0; font-size: 12pt; }
+  .ps-amount { margin: 0; font-size: 26pt; font-weight: 650; line-height: 1.15; }
+  .ps-amount span { font-size: 12pt; font-weight: 400; color: #555; }
+  .ps-type { margin: 0; color: #555; font-size: 9.5pt; text-transform: uppercase; letter-spacing: .05em; }
+  .ps-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; page-break-inside: avoid; }
+  .ps-table th, .ps-table td { padding: 3.5px 8px; border-bottom: 1px solid #ccc; text-align: right; vertical-align: top; }
+  .ps-table th { font-size: 9.5pt; color: #444; border-bottom: 1px solid #888; }
+  .ps-table th:first-child, .ps-table td:first-child { text-align: left; }
+  .ps-table .ps-total td { font-weight: 650; border-top: 1px solid #888; }
+  .ps-compare { table-layout: fixed; }
+  .ps-compare td, .ps-compare th { text-align: left; }
+  .ps-compare td:first-child { color: #444; }
+  .ps-list { margin: 0; padding-left: 18px; }
+  .ps-list.small { font-size: 9.5pt; color: #333; }
+  .ps-delta { margin: 12px 0 0; font-weight: 600; }
+  .ps-foot { margin-top: 16px; padding-top: 8px; border-top: 1px solid #ccc; font-size: 8.5pt; color: #555; }
+}

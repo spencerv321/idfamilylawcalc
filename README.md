@@ -4,9 +4,13 @@ A calculator for I.R.F.L.P. Rule 120 (amended eff. July 1, 2025), built for
 family law attorneys and mediators. `SPEC.md` is the product spec, and
 `DECISIONS.md` logs every interpretation of the rule.
 
-**Status: Phase 2.** The engine plus the web app: case form, live
-results with every worksheet line, mediation mode, step-down schedule, filled
-Forms 5/6/7, and local-first saving with JSON export/import.
+**Status: Phase 2.** The engine plus the web app: case form (annual or
+monthly entry, common-schedule presets), live results with every worksheet
+line, mediation mode, step-down schedule, draft order language, printable
+client summary and proposal comparison, filled Forms 5/6/7, and local-first
+saving with backup/restore.
+
+Live: https://idaho-child-support-calc.pages.dev (deploys from `main`).
 
 ```sh
 pnpm install

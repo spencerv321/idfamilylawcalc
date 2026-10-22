@@ -85,6 +85,8 @@ export interface CaseFile extends CaseFacts {
   caption: Caption;
   options: EngineOptions;
   mediation: { left: Scenario; right: Scenario } | null;
+  /** Judgment wording: first payment date ('' = first of next month) and due day. */
+  order: { startDate: string; dueDay: number };
 }
 
 export const today = () => new Date().toISOString().slice(0, 10);
@@ -151,6 +153,7 @@ export function newCase(): CaseFile {
     },
     options: { ...DEFAULT_OPTIONS },
     mediation: null,
+    order: { startDate: '', dueDay: 1 },
   };
 }
 
@@ -267,5 +270,6 @@ export function normalizeCase(raw: unknown): CaseFile {
     },
     children: c.children ?? base.children,
     mediation: c.mediation ?? null,
+    order: { ...base.order, ...c.order },
   } as CaseFile;
 }

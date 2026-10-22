@@ -1,13 +1,23 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { stepDownSchedule, type CalculationResult, type CaseInput, type Decimal, type ParentId } from '../../engine';
 import { PARENTS, type CaseFile } from '../model/case';
-import { formatDate, pct, usd } from '../model/format';
+import { formatDate, pct, personalize, usd } from '../model/format';
+import { defaultStartDate, orderText } from '../model/orderText';
 import { downloadBlob, safeFilename } from '../model/storage';
-import { Section } from './ui';
+import { printView } from '../print';
+import { Section, TextInput } from './ui';
 
 const TYPE_LABEL = { primary: 'Primary custody', shared: 'Shared custody', split: 'Split custody', mixed: 'Mixed custody' };
 
-export function ResultsPanel(props: { c: CaseFile; input: CaseInput | null; result: CalculationResult | null; error: string | null }) {
+type Update = (mutate: (draft: CaseFile) => void) => void;
+
+export function ResultsPanel(props: {
+  c: CaseFile;
+  update: Update;
+  input: CaseInput | null;
+  result: CalculationResult | null;
+  error: string | null;
+}) {
   const { c, result, error } = props;
   if (error || !result) {
     return (
@@ -22,11 +32,12 @@ export function ResultsPanel(props: { c: CaseFile; input: CaseInput | null; resu
   return (
     <div className="results">
       <Headline c={c} r={result} />
-      <Flags r={result} />
+      <Flags r={result} names={{ A: nm(c, 'A'), B: nm(c, 'B') }} />
       <FormsBar c={c} r={result} />
       <Worksheet c={c} r={result} />
       {result.adjustments.taxBenefit && <TaxDetail c={c} r={result} />}
       {props.input && <StepDown c={c} input={props.input} />}
+      {props.input && <OrderLanguage c={c} update={props.update} input={props.input} r={result} />}
     </div>
   );
 }
@@ -113,14 +124,14 @@ export function Headline({ c, r, compact }: { c: CaseFile | { parents: CaseFile[
   );
 }
 
-export function Flags({ r, compact }: { r: CalculationResult; compact?: boolean }) {
+export function Flags({ r, compact, names }: { r: CalculationResult; compact?: boolean; names: { A: string; B: string } }) {
   if (r.flags.length === 0) return null;
   const info = new Set(['TAX_TIE_DEFAULTED_TO_CUSTODIAL', 'CHILD_EXCLUDED_EMANCIPATED', 'CUSTODY_CAP_APPLIED', 'MINIMUM_APPLIED']);
   return (
     <ul className={`flags${compact ? ' compact' : ''}`}>
       {r.flags.map((f, i) => (
         <li key={i} className={info.has(f.code) ? 'info' : 'warn'}>
-          <span className="cite">{f.rule}</span> {f.message}
+          <span className="cite">{f.rule}</span> {personalize(f.message, names)}
         </li>
       ))}
     </ul>
@@ -165,6 +176,9 @@ function FormsBar({ c, r }: { c: CaseFile; r: CalculationResult }) {
         </button>
         <button type="button" className="btn primary" disabled={!!busy} onClick={() => run('packet')}>
           {busy === 'packet' ? 'Filling…' : 'Both as one PDF'}
+        </button>
+        <button type="button" className="btn ghost" onClick={() => printView('summary')}>
+          Print summary
         </button>
       </div>
       {err && <p className="hint error">{err}</p>}
@@ -344,6 +358,59 @@ function TaxDetail({ c, r }: { c: CaseFile; r: CalculationResult }) {
         {nm(c, t.claimedBy)} claims the {t.eligibleChildIds.length === 1 ? 'child' : 'children'}; {nm(c, t.claimedBy === 'A' ? 'B' : 'A')} is
         entitled to {usd(t.nonClaimantShare)}/mo, applied as a credit against or addition to support.
       </p>
+    </Section>
+  );
+}
+
+function OrderLanguage({ c, update, input, r }: { c: CaseFile; update: Update; input: CaseInput; r: CalculationResult }) {
+  const [copied, setCopied] = useState(false);
+  const ref = useRef<HTMLTextAreaElement>(null);
+  const steps = useMemo(() => {
+    try {
+      return stepDownSchedule(input);
+    } catch {
+      return [];
+    }
+  }, [input]);
+  const startDate = c.order.startDate || defaultStartDate(c.calculationDate);
+  const text = useMemo(() => orderText(c, r, steps, { startDate, dueDay: c.order.dueDay }), [c, r, steps, startDate]);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      ref.current?.select();
+      document.execCommand('copy');
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  };
+
+  return (
+    <Section
+      title="Order language"
+      cite="120(j) · draft to edit"
+      collapsible
+      defaultOpen={false}
+      actions={
+        <button type="button" className="btn small primary" onClick={copy}>
+          {copied ? 'Copied ✓' : 'Copy'}
+        </button>
+      }
+    >
+      <div className="grid-2 order-opts">
+        <TextInput label="First payment" type="date" value={startDate} onChange={(v) => update((d) => void (d.order.startDate = v))} />
+        <TextInput
+          label="Due on day of month"
+          type="number"
+          min={1}
+          max={28}
+          value={String(c.order.dueDay)}
+          onChange={(v) => update((d) => void (d.order.dueDay = Math.max(1, Math.min(28, Math.trunc(Number(v)) || 1))))}
+        />
+      </div>
+      <textarea ref={ref} className="order-text" readOnly value={text} rows={Math.min(24, text.split('\n').length + 8)} aria-label="Draft order language" />
+      <p className="hint">Uses the caption’s Petitioner/Respondent roles. Review and edit before filing; this is a drafting aid, not legal advice.</p>
     </Section>
   );
 }

@@ -38,3 +38,10 @@ export function ageOn(birthDate: string, on: string): number | null {
   const [y, m, d] = on.split('-').map(Number) as [number, number, number];
   return y - by - (m < bm || (m === bm && d < bd) ? 1 : 0);
 }
+
+/** Engine messages say "Parent A" or "(A)"; swap in the parents' names for display. */
+export function personalize(message: string, names: { A: string; B: string }): string {
+  return message
+    .replace(/\b[Pp]arent ([AB])\b/g, (_, p: 'A' | 'B') => names[p])
+    .replace(/\(([AB])\)/g, (_, p: 'A' | 'B') => `(${names[p]})`);
+}

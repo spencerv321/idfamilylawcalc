@@ -3,14 +3,15 @@ import { calculate, classifyChild, type CalculationResult, type CaseInput, type 
 import { factsOf, InputError, PARENTS, toEngineInput, type CaseFacts, type CaseFile, type Scenario } from '../model/case';
 import { usd } from '../model/format';
 import { OvernightsChart } from './OvernightsChart';
-import { OvernightsSlider } from './InputPanel';
+import { printView } from '../print';
+import { OvernightsSlider, SchedulePicker } from './InputPanel';
 import { Flags, Headline } from './ResultsPanel';
 import { MoneyInput, Segmented, Toggle } from './ui';
 
 type Update = (mutate: (draft: CaseFile) => void) => void;
 type Side = 'left' | 'right';
 
-function evaluate(facts: CaseFacts, options: CaseFile['options']): { input: CaseInput | null; result: CalculationResult | null; error: string | null } {
+export function evaluate(facts: CaseFacts, options: CaseFile['options']): { input: CaseInput | null; result: CalculationResult | null; error: string | null } {
   try {
     const input = toEngineInput(facts, options);
     return { input, result: calculate(input), error: null };
@@ -73,6 +74,9 @@ function Session({ c, update }: { c: CaseFile; update: Update }) {
             }
           >
             Reset both to case
+          </button>
+          <button type="button" className="btn ghost" onClick={() => printView('comparison')}>
+            Print comparison
           </button>
           <button type="button" className="btn ghost" onClick={() => update((d) => void (d.mediation = null))}>
             End session
@@ -154,7 +158,7 @@ function ScenarioPanel(props: {
               {deltaText(props.delta, names, rd)} vs {props.otherLabel}
             </p>
           )}
-          <Flags r={ev.result} compact />
+          <Flags r={ev.result} compact names={names} />
         </>
       ) : (
         <div className="headline compact empty">
@@ -186,6 +190,11 @@ function ScenarioPanel(props: {
               </div>
             ))
           )}
+          <SchedulePicker
+            compact
+            names={names}
+            onApply={(n) => set((x) => x.children.forEach((ch) => (ch.overnightsWithA = n)))}
+          />
         </Control>
 
         <Control label="Annual income" cite="120(e)">

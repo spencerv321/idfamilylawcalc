@@ -6,7 +6,19 @@ import { ResultsPanel } from './components/ResultsPanel';
 import { InputError, newCase, newId, toEngineInput, type CaseFile } from './model/case';
 import { formatDate, usd } from './model/format';
 import { EXAMPLES } from './model/samples';
-import { downloadBlob, exportCaseJson, importCaseJson, safeFilename } from './model/storage';
+import {
+  casesNeedingBackup,
+  downloadBlob,
+  exportBackupJson,
+  exportCaseJson,
+  importJson,
+  markBackedUp,
+  mergeImported,
+  requestPersistentStorage,
+  safeFilename,
+  snoozeBackupReminder,
+} from './model/storage';
+import { PrintArea } from './components/PrintArea';
 import { useCases } from './model/useCases';
 
 type View = 'calculator' | 'mediation';
@@ -15,7 +27,19 @@ type View = 'calculator' | 'mediation';
 const BETA = true;
 
 export function App() {
-  const { cases, current, loaded, storageError, update, open, remove } = useCases();
+  const { cases, current, loaded, storageError, update, open, remove, refresh } = useCases();
+  const [backupTick, setBackupTick] = useState(0);
+  const needBackup = useMemo(() => casesNeedingBackup(cases), [cases, backupTick]);
+  const hasCases = cases.length > 0;
+  useEffect(() => {
+    if (hasCases) void requestPersistentStorage();
+  }, [hasCases]);
+
+  const backUp = () => {
+    downloadBlob(exportBackupJson(cases), `idaho-child-support-backup-${new Date().toISOString().slice(0, 10)}.json`);
+    markBackedUp();
+    setBackupTick((t) => t + 1);
+  };
   const [view, setView] = useState<View>(() => (sessionGet('view') === 'mediation' ? 'mediation' : 'calculator'));
   useEffect(() => sessionSet('view', view), [view]);
 
@@ -62,6 +86,12 @@ export function App() {
           onExample={(c) => void open(c, { save: true })}
           onDelete={(id) => void remove(id)}
           onImport={(c) => void open(c, { save: true })}
+          onRestore={async (list) => {
+            const r = await mergeImported(list, cases, newId);
+            await refresh();
+            return r;
+          }}
+          onBackup={backUp}
         />
         </div>
       </header>
@@ -72,13 +102,36 @@ export function App() {
         </div>
       )}
       {storageError && <div className="banner warn">{storageError}</div>}
+      {needBackup.length > 0 && (
+        <div className="banner backup" role="region" aria-label="Backup reminder">
+          <span>
+            {needBackup.length === 1 ? '1 case is' : `${needBackup.length} cases are`} saved only in this browser and not backed up. Clearing browser data
+            would lose {needBackup.length === 1 ? 'it' : 'them'}.
+          </span>
+          <span className="btn-row">
+            <button type="button" className="btn small primary" onClick={backUp}>
+              Back up all cases
+            </button>
+            <button
+              type="button"
+              className="btn small ghost"
+              onClick={() => {
+                snoozeBackupReminder(7);
+                setBackupTick((t) => t + 1);
+              }}
+            >
+              Remind me in a week
+            </button>
+          </span>
+        </div>
+      )}
 
       <main className={view}>
         {view === 'calculator' ? (
           <div className="calc-layout">
             <InputPanel c={current} update={update} result={result} />
             <aside className="results-col" aria-label="Results" id="results">
-              <ResultsPanel c={current} input={input} result={result} error={error} />
+              <ResultsPanel c={current} update={update} input={input} result={result} error={error} />
             </aside>
             {result && (
               <button
@@ -109,6 +162,7 @@ export function App() {
           Not affiliated with the State of Idaho. Verify results before filing.
         </span>
       </footer>
+      <PrintArea c={current} input={input} result={result} />
     </div>
   );
 }
@@ -121,9 +175,12 @@ function CaseMenu(props: {
   onExample: (c: CaseFile) => void;
   onDelete: (id: string) => void;
   onImport: (c: CaseFile) => void;
+  onRestore: (cases: CaseFile[]) => Promise<{ added: number; skipped: number; saved: CaseFile[] }>;
+  onBackup: () => void;
 }) {
   const [openMenu, setOpenMenu] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const saved = props.cases.some((c) => c.id === props.current.id);
@@ -173,10 +230,13 @@ function CaseMenu(props: {
               className="btn small"
               onClick={() => downloadBlob(exportCaseJson(props.current), `${safeFilename(props.current.title)}.json`)}
             >
-              Export JSON
+              Export this case
             </button>
             <button type="button" role="menuitem" className="btn small" onClick={() => fileRef.current?.click()}>
-              Import JSON
+              Import or restore
+            </button>
+            <button type="button" role="menuitem" className="btn small" disabled={props.cases.length === 0} onClick={props.onBackup}>
+              Back up all cases
             </button>
             <input
               ref={fileRef}
@@ -188,12 +248,18 @@ function CaseMenu(props: {
                 e.target.value = '';
                 if (!file) return;
                 try {
-                  const c = await importCaseJson(file);
-                  // Importing a case that already exists here keeps both.
-                  if (props.cases.some((x) => x.id === c.id)) c.id = newId();
-                  props.onImport(c);
+                  const list = await importJson(file);
                   setErr(null);
-                  setOpenMenu(false);
+                  if (list.length === 1) {
+                    const c = list[0]!;
+                    // Importing a case that already exists here keeps both.
+                    if (props.cases.some((x) => x.id === c.id)) c.id = newId();
+                    props.onImport(c);
+                    setOpenMenu(false);
+                  } else {
+                    const r = await props.onRestore(list);
+                    setMsg(`Restored ${r.added} ${r.added === 1 ? 'case' : 'cases'}${r.skipped ? `; ${r.skipped} already here` : ''}.`);
+                  }
                 } catch (x) {
                   setErr((x as Error).message);
                 }
@@ -201,6 +267,7 @@ function CaseMenu(props: {
             />
           </div>
           {err && <p className="hint error">{err}</p>}
+          {msg && <p className="hint">{msg}</p>}
           <div className="menu-label">Saved cases</div>
           {props.cases.length === 0 && <p className="muted small menu-empty">Nothing saved yet. Cases save automatically as you type.</p>}
           <ul className="case-list">

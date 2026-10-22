@@ -2,7 +2,8 @@ import { useState, type ReactNode } from 'react';
 import { classifyChild, type CalculationResult, type ParentId } from '../../engine';
 import { emptyChild, PARENTS, type CaseFacts, type CaseFile, type ParentForm } from '../model/case';
 import { ageOn, pct, usd } from '../model/format';
-import { MoneyInput, Section, Segmented, TextInput, Toggle } from './ui';
+import { presetOvernights, SCHEDULE_PRESETS } from '../model/schedules';
+import { MoneyInput, PeriodMoneyInput, Section, Segmented, TextInput, Toggle, usePref } from './ui';
 
 type Update = (mutate: (draft: CaseFile) => void) => void;
 type FactsUpdate = (mutate: (draft: CaseFacts) => void) => void;
@@ -113,6 +114,7 @@ function LedgerRow(props: { label: ReactNode; form?: string; children: [ReactNod
 }
 
 function ParentsSection({ facts, update, result }: { facts: CaseFacts; update: FactsUpdate; result: CalculationResult | null }) {
+  const [period, setPeriod] = usePref('incomePeriod', 'annual', ['annual', 'monthly'] as const);
   const [more, setMore] = useState(() => hasAny(facts, MORE_INCOME));
   const [business, setBusiness] = useState(() => hasAny(facts, BUSINESS));
   const [overtime, setOvertime] = useState(() => PARENTS.some((p) => facts.parents[p].income.overtimeOrSecondJob.trim() !== ''));
@@ -125,11 +127,12 @@ function ParentsSection({ facts, update, result }: { facts: CaseFacts; update: F
 
   const money = (key: MoneyIncomeKey) =>
     PARENTS.map((p) => (
-      <MoneyInput
+      <PeriodMoneyInput
         key={p}
         compact
+        period={period}
         ariaLabel={`${facts.parents[p].name || `Parent ${p}`}: ${key}`}
-        value={facts.parents[p].income[key]}
+        annual={facts.parents[p].income[key]}
         onChange={(v) => update((d) => void (d.parents[p].income[key] = v))}
       />
     )) as [ReactNode, ReactNode];
@@ -143,17 +146,33 @@ function ParentsSection({ facts, update, result }: { facts: CaseFacts; update: F
 
   const deduction = (key: 'otherCourtOrders' | 'spousalMaintenanceThisCase' | 'supportWithoutOrder') =>
     PARENTS.map((p) => (
-      <MoneyInput
+      <PeriodMoneyInput
         key={p}
         compact
+        period={period}
         ariaLabel={`${facts.parents[p].name}: ${key}`}
-        value={facts.parents[p].deductions[key]}
+        annual={facts.parents[p].deductions[key]}
         onChange={(v) => update((d) => void (d.parents[p].deductions[key] = v))}
       />
     )) as [ReactNode, ReactNode];
 
   return (
-    <Section title="Parents and income" cite="120(e)–(f) · annual amounts">
+    <Section
+      title="Parents and income"
+      cite="120(e)–(f)"
+      actions={
+        <Segmented
+          size="sm"
+          ariaLabel="Enter income as"
+          value={period}
+          options={[
+            { value: 'annual', label: 'Annual' },
+            { value: 'monthly', label: 'Monthly' },
+          ]}
+          onChange={setPeriod}
+        />
+      }
+    >
       <div className="ledger">
         <div className="ledger-row ledger-head">
           <div />
@@ -312,6 +331,15 @@ function ChildrenSection({ facts, update }: { facts: CaseFacts; update: FactsUpd
       }
     >
       <div className="children">
+        <SchedulePicker
+          names={names}
+          note={facts.children.length > 1 ? 'Sets every child’s overnights.' : undefined}
+          onApply={(nightsWithA) =>
+            update((d) => {
+              d.children.forEach((ch) => (ch.overnightsWithA = nightsWithA));
+            })
+          }
+        />
         {facts.children.map((ch, i) => {
           const age = ageOn(ch.birthDate, facts.calculationDate);
           const badge = custodyLabel(ch.overnightsWithA, names);
@@ -371,6 +399,84 @@ function ChildrenSection({ facts, update }: { facts: CaseFacts; update: FactsUpd
         </button>
       </div>
     </Section>
+  );
+}
+
+/**
+ * Quick fill for overnights from a common schedule. The schedule describes the
+ * parent with alternating time; the other parent has the rest of the year.
+ */
+export function SchedulePicker(props: {
+  names: Record<ParentId, string>;
+  onApply: (nightsWithA: number) => void;
+  note?: string;
+  compact?: boolean;
+}) {
+  const [presetId, setPresetId] = useState('');
+  const [parent, setParent] = useState<ParentId>('A');
+  const [summer, setSummer] = useState('0');
+  const preset = SCHEDULE_PRESETS.find((p) => p.id === presetId);
+  const nights = preset ? presetOvernights(preset, Number(summer) || 0) : null;
+  const apply = (id: string, p: ParentId, weeks: string) => {
+    const pr = SCHEDULE_PRESETS.find((x) => x.id === id);
+    if (!pr) return;
+    const n = presetOvernights(pr, Number(weeks) || 0);
+    props.onApply(p === 'A' ? n : 365 - n);
+  };
+  return (
+    <div className={`schedule-picker${props.compact ? ' compact' : ''}`}>
+      <div className="schedule-row">
+        <label className="field grow">
+          <span className="label">Common schedule</span>
+          <select
+            value={presetId}
+            onChange={(e) => {
+              setPresetId(e.target.value);
+              apply(e.target.value, parent, summer);
+            }}
+          >
+            <option value="">Choose to fill overnights…</option>
+            {SCHEDULE_PRESETS.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="field">
+          <span className="label">Time with</span>
+          <Segmented
+            size="sm"
+            ariaLabel="Schedule describes time with"
+            value={parent}
+            options={PARENTS.map((p) => ({ value: p, label: props.names[p] }))}
+            onChange={(p) => {
+              setParent(p);
+              apply(presetId, p, summer);
+            }}
+          />
+        </div>
+        <label className="field summer">
+          <span className="label">+ summer weeks</span>
+          <input
+            type="number"
+            min={0}
+            max={12}
+            value={summer}
+            onChange={(e) => {
+              setSummer(e.target.value);
+              apply(presetId, parent, e.target.value);
+            }}
+          />
+        </label>
+      </div>
+      {nights !== null && (
+        <p className="hint">
+          {props.names[parent]}: {nights} overnights a year; {props.names[parent === 'A' ? 'B' : 'A']}: {365 - nights}. Holidays aren’t counted; adjust by hand if
+          needed.{props.note ? ` ${props.note}` : ''}
+        </p>
+      )}
+    </div>
   );
 }
 

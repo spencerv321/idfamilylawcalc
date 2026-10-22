@@ -99,5 +99,5 @@ export function useCases() {
     [current.id],
   );
 
-  return { cases, current, loaded, storageError, update, open, remove };
+  return { cases, current, loaded, storageError, update, open, remove, refresh };
 }

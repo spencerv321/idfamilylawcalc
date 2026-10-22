@@ -1,4 +1,5 @@
 import { useId, useState, type ReactNode } from 'react';
+import { Decimal } from '../../engine';
 import { isValidMoney, parseMoney } from '../model/case';
 
 export function MoneyInput(props: {
@@ -9,6 +10,7 @@ export function MoneyInput(props: {
   placeholder?: string;
   ariaLabel?: string;
   compact?: boolean;
+  onBlur?: () => void;
 }) {
   const id = useId();
   const invalid = !isValidMoney(props.value);
@@ -32,12 +34,79 @@ export function MoneyInput(props: {
             const [int, frac] = n.split('.');
             const pretty = int!.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (frac ? `.${frac}` : '');
             if (pretty !== props.value) props.onChange(pretty);
+            props.onBlur?.();
           }}
         />
       </div>
       {invalid ? <div className="hint error">Enter a number</div> : props.hint ? <div className="hint">{props.hint}</div> : null}
     </div>
   );
+}
+
+const withCommas = (s: string) => {
+  const [int, frac] = s.split('.');
+  return int!.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (frac ? `.${frac}` : '');
+};
+
+/**
+ * A money input over an ANNUAL stored value that can be typed in monthly
+ * terms. The stored value changes only when the user edits, so switching the
+ * period never rounds an amount that was entered annually.
+ */
+export function PeriodMoneyInput(props: {
+  annual: string;
+  period: 'annual' | 'monthly';
+  onChange: (annual: string) => void;
+  ariaLabel?: string;
+  compact?: boolean;
+}) {
+  const [draft, setDraft] = useState<string | null>(null);
+  if (props.period === 'annual') {
+    return <MoneyInput compact={props.compact} ariaLabel={props.ariaLabel} value={props.annual} onChange={props.onChange} />;
+  }
+  const parsed = parseMoney(props.annual);
+  const shown =
+    draft ??
+    (props.annual.trim() === '' || parsed === null
+      ? props.annual
+      : withCommas(new Decimal(parsed).div(12).toDecimalPlaces(2).toString()));
+  return (
+    <MoneyInput
+      compact={props.compact}
+      ariaLabel={props.ariaLabel}
+      value={shown}
+      onChange={(v) => {
+        setDraft(v);
+        if (v.trim() === '') return props.onChange('');
+        const n = parseMoney(v);
+        if (n !== null) props.onChange(new Decimal(n).times(12).toString());
+      }}
+      onBlur={() => setDraft(null)}
+    />
+  );
+}
+
+/** A per-browser UI preference in localStorage (falls back to the default). */
+export function usePref<T extends string>(key: string, fallback: T, allowed: readonly T[]): [T, (v: T) => void] {
+  const [v, setV] = useState<T>(() => {
+    try {
+      const s = localStorage.getItem(key) as T | null;
+      return s && allowed.includes(s) ? s : fallback;
+    } catch {
+      return fallback;
+    }
+  });
+  return [
+    v,
+    (next: T) => {
+      setV(next);
+      try {
+        localStorage.setItem(key, next);
+      } catch {
+        /* storage unavailable */
+      }
+    },
+  ];
 }
 
 export function TextInput(props: {

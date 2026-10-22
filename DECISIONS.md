@@ -227,3 +227,21 @@ placement.
   which "Parent" column is which.
 - Amounts follow the rounding convention (D-001): whole dollars under
   `'rule-example'`, cents under `'exact'`.
+
+## D-019 Schedule presets · Choice
+
+Presets count overnights the way the 120(i)(3)(A) example does: a two-week
+pattern times 26 (every other weekend = 2 × 26 = 52). Equal-time schedules
+give 182/183. Each summer week adds 7 nights minus that week's share of the
+regular pattern. Holidays aren't modeled; adjust the number by hand.
+
+## D-020 Order language · Choice
+
+The "Order language" panel drafts the 120(j) statement: the total and due date,
+then a step-down sentence at each emancipation date (from the step-down
+schedule), plus health insurance, the uncovered-expense split by income share,
+the $500 pre-approval rule (120(g)(4)(B)), child care, and the tax exemption.
+When the non-custodial parent claims the children, it adds the Form 8332
+requirement (120(g)(3)). Parties are named by caption role. Amounts are always
+written to the cent ("$560.00"); the value itself follows the rounding
+convention (D-001).
