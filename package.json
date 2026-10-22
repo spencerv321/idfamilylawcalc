@@ -1,0 +1,24 @@
+{
+  "name": "idfamilylawcalc",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Idaho child support calculator (I.R.F.L.P. Rule 120)",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "extract-tax-tables": "tsx scripts/extract-tax-tables.ts"
+  },
+  "dependencies": {
+    "decimal.js": "^10.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "fast-check": "^4.10.2",
+    "pdfjs-dist": "^6.4.299",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}

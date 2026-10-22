@@ -1,0 +1,40 @@
+{
+  "id": "D0",
+  "description": "Template: copy to icsp/D<n>.json and fill from the ICSP printout",
+  "source": { "icspVersion": "", "printedOn": "" },
+  "input": {
+    "calculationDate": "2026-10-22",
+    "parents": {
+      "A": {
+        "income": {
+          "wages": 0,
+          "overtimeOrSecondJob": 0,
+          "excludeOvertimeOrSecondJob": false,
+          "business": { "grossReceipts": 0, "ordinaryAndNecessaryExpenses": 0, "straightLineDepreciation": 0, "selfEmploymentTax": 0 },
+          "otherIncome": 0,
+          "employmentBenefits": 0,
+          "potentialIncome": 0
+        },
+        "deductions": { "otherCourtOrders": 0, "spousalMaintenanceThisCase": 0, "supportWithoutOrder": 0, "otherChildrenInHome": 0 },
+        "maritalStatus": "single"
+      },
+      "B": {
+        "income": { "wages": 0 },
+        "deductions": {},
+        "maritalStatus": "single"
+      }
+    },
+    "children": [{ "id": "c1", "birthDate": "2018-01-01", "overnightsWithA": 0 }],
+    "addOns": {
+      "childCare": [],
+      "healthInsurance": [],
+      "taxExemptionClaimedBy": null
+    },
+    "options": { "rounding": "rule-example" }
+  },
+  "expected": {
+    "payer": "A",
+    "totalMonthly": "0.00",
+    "lines": {}
+  }
+}
